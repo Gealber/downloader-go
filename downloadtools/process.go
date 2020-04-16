@@ -1,7 +1,7 @@
 package downloadtools
 
 import (
-	"downloader-go/humanize"
+	"github.com/Gealber/downloader-go/humanize"
 	"fmt"
 	"io"
 	"log"
