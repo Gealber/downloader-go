@@ -1,0 +1,85 @@
+How to improve file downloader implemented in golang?
+
+Hi, I'm trying to improve the performance of a downloader that I implemented in golang.
+I think I'm having issues with the memory usage because the program stuck when I try to 
+download a large file, like 1gb or larger. I used it to download files around 
+100mgb and 300mgb and all was ok. The downloader is used on a server that present the header
+Accept-Ranges. Below I will show you the implementation and part of the main but first let me explain you.
+#Accept-Range:bytes
+In this implementation I created an http.Client to set the Header Range with the part of the file
+that I'm requesting, after that i made the request. To store the response of this request I created
+a temporary file, and copied the response directly to this file. The idea with this is to avoid copy
+the entire response in memory. This is the implementation:
+```
+func DownloadPart(wg *sync.WaitGroup, tempName string, url string, part string) {
+	//setting up the client to make the request
+	client := http.Client{}
+	request, err := http.NewRequest("GET", url, nil)
+
+	//setting up the requests
+	request.Header.Set("Range", part)
+	response, err := client.Do(request)
+	checkError(err, "fatal")
+	defer response.Body.Close()
+
+	//creating the temporary file and copying
+	// the response to it
+	file, err := os.Create(tempName)
+	checkError(err, "panic")
+	defer file.Close()
+	
+	_, err = io.Copy(file, response.Body)
+	checkError(err, "fatal")
+
+	defer wg.Done()
+}
+```
+This function are called in various goroutines, so I used a WaitGroup to decrease the counter when a
+gorputine end to download the part of the file. After all this goroutines end I join the diferents 
+temporary files in a single file. This is the implementation of the join function
+```
+func joinFiles(name string) {
+	finalFile, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	defer finalFile.Close()
+
+	files, err := ioutil.ReadDir(".")
+
+	for _, f := range files {
+		tempData, err := ioutil.ReadFile(f.Name())
+		if err != nil {
+			log.Panicln(err.Error())
+		}
+
+		if f.Name() != finalFile.Name() {
+			finalFile.Write(tempData)
+			os.Remove(f.Name())
+		}
+	}
+}
+
+```
+Now I'll show you the part of the main function that use these functions
+```
+//start, end and rest are used to set the Range header in the requests 
+//threads are the number of goroutines to used in the download
+var wg sync.WaitGroup
+wg.Add(threads)
+//initializing the goroutines
+for i := 0; i < threads; i++ {
+    part := fmt.Sprintf("bytes=%d-%d", start, end)
+    start = end + 1
+    if i == threads-1 {
+        end = end + step + rest
+    } else {
+        end = end + step
+    }
+    go tools.DownloadPart(&wg, fmt.Sprintf("%d.temp", i), url, part)
+}
+wg.Wait()
+log.Println("Joining files...")
+joinFiles(name)	
+```
+If there's a way to improve this implementation?
