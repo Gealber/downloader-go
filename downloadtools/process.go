@@ -31,7 +31,7 @@ func DownloadPart(wg *sync.WaitGroup, counter *humanize.WriteCounter, tempName, 
 	//creating the temporary file and copying
 	// the response to it
 	file, err := os.Create(tempName)
-	checkError(err, "panic")
+	checkError(err, "fatal")
 	defer file.Close()
 
 	buf := make([]byte, 4096)
@@ -61,7 +61,7 @@ func Download(fileName string, url string) {
 
 	counter := &humanize.WriteCounter{}
 	_, err = io.Copy(file, io.TeeReader(response.Body, counter))
-	checkError(err, "panic")
+	checkError(err, "fatal")
 
 	err = os.Rename(fileName+".temp", fileName)
 	checkError(err, "fatal")
@@ -71,10 +71,10 @@ func Download(fileName string, url string) {
 
 //HandleRangeDownload handle the download of the file by making a
 //range request
-func HandleRangeDownload(length, url, name string, threads int) {
+func HandleRangeDownload(length, url, name string, threads int) error {
 	size, err := strconv.Atoi(length)
 	if err != nil {
-		log.Panicln(err.Error())
+		return err
 	}
 
 	start, step, end, rest := SetBenchmarks(size, threads)
@@ -99,11 +99,15 @@ func HandleRangeDownload(length, url, name string, threads int) {
 
 	wg.Wait()
 	fmt.Printf("\nJoining files...\n")
-	JoinFiles(name)
+	err = JoinFiles(name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //HandleDownload make all the stuff related to the download
-func HandleDownload(name, url string, threads int) {
+func HandleDownload(name, url string, threads int) error {
 	if url != "" && name != "" && threads < 8 {
 		_ = os.Mkdir("Downloads", 0700)
 		err := os.Chdir("Downloads")
@@ -117,10 +121,14 @@ func HandleDownload(name, url string, threads int) {
 		accept, size := RangeAndSize(url)
 		if accept {
 
-			HandleRangeDownload(size, url, name, threads)
-			return
+			err = HandleRangeDownload(size, url, name, threads)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 		Download(name, url)
-		return
+		return nil
 	}
+	return nil
 }

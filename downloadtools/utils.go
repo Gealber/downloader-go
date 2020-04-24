@@ -42,7 +42,7 @@ func RangeAndSize(url string) (bool, string) {
 func JoinFiles(name string) error {
 	finalFile, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Panicln(err.Error())
+		return err
 	}
 	defer finalFile.Close()
 
@@ -51,7 +51,7 @@ func JoinFiles(name string) error {
 	for _, f := range files {
 		tempFile, err := os.Open(f.Name())
 		if err != nil {
-			log.Panicln(err.Error())
+			return err
 		}
 
 		if f.Name() != finalFile.Name() && f.Name() != "meta" {
