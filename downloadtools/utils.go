@@ -50,12 +50,13 @@ func JoinFiles(name, baseDir string) error {
 	buf := make([]byte, 4096)
 	for _, f := range files {
 		fname := path.Join(baseDir, f.Name())
+		meta := path.Join(baseDir,"meta")
 		tempFile, err := os.Open(fname)
 		if err != nil {
 			return err
 		}
 
-		if fname != name && fname != "meta" {
+		if fname != name && fname != meta {
 			_, err := io.CopyBuffer(finalFile, tempFile, buf)
 			if err != nil {
 				return err
