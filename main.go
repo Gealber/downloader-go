@@ -5,7 +5,8 @@ package main
 import (
 	"github.com/Gealber/downloader-go/downloadtools"
 	"flag"
-	"log"	
+	"log"
+	"os"
 )
 
 var (
@@ -20,8 +21,12 @@ func main() {
 	flag.IntVar(&threads, "t", 4, "threads to be used in the connection")
 
 	flag.Parse()
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	downloadtools.HandleDownload(name,url,threads)
-	
+	downloadtools.HandleDownload(name, url, currentDir, threads)
+
 	log.Println("You must provide an url and a name at least")
 }

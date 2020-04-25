@@ -1,14 +1,16 @@
 package downloadtools
 
 import (
-	"github.com/Gealber/downloader-go/humanize"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"sync"
+
+	"github.com/Gealber/downloader-go/humanize"
 )
 
 //DownloadPart download the part of the video or file
@@ -18,7 +20,7 @@ import (
 //from where is going to download, position the position
 // of the file to start copying.
 func DownloadPart(wg *sync.WaitGroup, counter *humanize.WriteCounter, tempName, url, part string) {
-	//setting up the client to make the request
+	//setting up the client to make the request	
 	client := http.Client{}
 	request, err := http.NewRequest("GET", url, nil)
 
@@ -71,7 +73,7 @@ func Download(fileName string, url string) {
 
 //HandleRangeDownload handle the download of the file by making a
 //range request
-func HandleRangeDownload(length, url, name string, threads int) error {
+func HandleRangeDownload(length, url, name, downloadDir string, threads int) error {
 	size, err := strconv.Atoi(length)
 	if err != nil {
 		return err
@@ -93,13 +95,13 @@ func HandleRangeDownload(length, url, name string, threads int) error {
 		} else {
 			end = end + step
 		}
-
-		go DownloadPart(&wg, counter, fmt.Sprintf("%d.temp", i), url, part)
+		tempName := path.Join(downloadDir,fmt.Sprintf("%d.temp", i))
+		go DownloadPart(&wg, counter, tempName, url, part)
 	}
 
 	wg.Wait()
 	fmt.Printf("\nJoining files...\n")
-	err = JoinFiles(name)
+	err = JoinFiles(name,downloadDir)
 	if err != nil {
 		return err
 	}
@@ -107,21 +109,22 @@ func HandleRangeDownload(length, url, name string, threads int) error {
 }
 
 //HandleDownload make all the stuff related to the download
-func HandleDownload(name, url string, threads int) error {
+func HandleDownload(name, url, downloadDir string, threads int) error {
 	if url != "" && name != "" && threads < 8 {
-		_ = os.Mkdir("Downloads", 0700)
-		err := os.Chdir("Downloads")
-
+		downloadDir = path.Join(downloadDir, "Downloads")
+		_ = os.Mkdir(downloadDir, 0700)
+		err := os.Chdir(downloadDir)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		name = path.Join(downloadDir,name)
 		log.Println("Download started...")
 
 		accept, size := RangeAndSize(url)
 		if accept {
 
-			err = HandleRangeDownload(size, url, name, threads)
+			err = HandleRangeDownload(size, url, name,downloadDir, threads)
 			if err != nil {
 				return err
 			}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 )
 
 func checkError(err error, option string) {
@@ -36,31 +37,31 @@ func RangeAndSize(url string) (bool, string) {
 	return true, size
 }
 
-
 //JoinFiles join the files in the current directory
 //to a final file with the gicen name
-func JoinFiles(name string) error {
+func JoinFiles(name, baseDir string) error {
 	finalFile, err := os.OpenFile(name, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer finalFile.Close()
-
-	files, err := ioutil.ReadDir(".")
+	//this line need to be modified
+	files, err := ioutil.ReadDir(baseDir)
 	buf := make([]byte, 4096)
 	for _, f := range files {
-		tempFile, err := os.Open(f.Name())
+		fname := path.Join(baseDir, f.Name())
+		tempFile, err := os.Open(fname)
 		if err != nil {
 			return err
 		}
 
-		if f.Name() != finalFile.Name() && f.Name() != "meta" {
-			_,err := io.CopyBuffer(finalFile, tempFile,buf)
+		if fname != name && fname != "meta" {
+			_, err := io.CopyBuffer(finalFile, tempFile, buf)
 			if err != nil {
 				return err
 			}
 			tempFile.Close()
-			os.Remove(f.Name())
+			os.Remove(fname)
 		}
 		tempFile.Close()
 	}
