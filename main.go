@@ -3,10 +3,11 @@
 package main
 
 import (
-	"downloader-go/downloadtools"
+	"github.com/Gealber/downloader-go/downloadtools"
 	"flag"
 	"log"
 	"os"
+	"path"
 )
 
 var (
@@ -25,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
+	currentDir = path.Join(currentDir, "Downloads")
 	downloadtools.HandleDownload(name, url, currentDir, threads)
 
 	log.Println("You must provide an url and a name at least")
