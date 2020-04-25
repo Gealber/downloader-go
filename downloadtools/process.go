@@ -111,19 +111,13 @@ func HandleRangeDownload(length, url, name, downloadDir string, threads int) err
 //HandleDownload make all the stuff related to the download
 func HandleDownload(name, url, downloadDir string, threads int) error {
 	if url != "" && name != "" && threads < 8 {
-		_ = os.Mkdir(downloadDir, 0700)
-		err := os.Chdir(downloadDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		name = path.Join(downloadDir,name)
 		log.Println("Download started...")
 
 		accept, size := RangeAndSize(url)
 		if accept {
 
-			err = HandleRangeDownload(size, url, name,downloadDir, threads)
+			err := HandleRangeDownload(size, url, name,downloadDir, threads)
 			if err != nil {
 				return err
 			}
