@@ -3,7 +3,7 @@
 package main
 
 import (
-	"downloader-go/downloadtools"
+	"github.com/Gealber/downloader-go/downloadtools"
 	"flag"
 	"log"
 	"os"
