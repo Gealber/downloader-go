@@ -13,6 +13,8 @@ func checkError(err error, option string) {
 	if err != nil {
 		if option == "fatal" {
 			log.Fatalln(err.Error())
+		} else if option == "print" {
+			log.Println(err.Error())
 		} else {
 			log.Panicln(err.Error())
 		}

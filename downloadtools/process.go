@@ -54,21 +54,19 @@ func DownloadPart(wg *sync.WaitGroup, counter *humanize.WriteCounter, tempName, 
 //his full length.
 func Download(fileName string, url string) {
 	response, err := http.Get(url)
-	checkError(err, "fatal")
+	checkError(err, "print")
 	defer response.Body.Close()
 
 	file, err := os.Create(fileName + ".temp")
-	checkError(err, "fatal")
+	checkError(err, "print")
 	defer file.Close()
 
-	counter := &humanize.WriteCounter{}
-	_, err = io.Copy(file, io.TeeReader(response.Body, counter))
-	checkError(err, "fatal")
+	//counter := &humanize.WriteCounter{}
+	_, err = io.Copy(file, response.Body)
+	checkError(err, "print")
 
 	err = os.Rename(fileName+".temp", fileName)
-	checkError(err, "fatal")
-
-	log.Println("The downloaded has finished")
+	checkError(err, "print")	
 }
 
 //HandleRangeDownload handle the download of the file by making a
